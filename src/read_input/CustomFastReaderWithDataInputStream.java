@@ -1,103 +1,108 @@
 package read_input;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.StringTokenizer;
 
 
-public class CustomFastReaderWithBufferReader {
-    private final BufferedReader reader;
-    private StringTokenizer tokenizer;
+public class CustomFastReaderWithDataInputStream {
+    final private int BUFFER_SIZE = 1 << 16; // 65536 bytes (64KB)
+    // DataInputStream để đọc dữ liệu từ System.in
+    private DataInputStream din;
+    // Mảng byte để lưu dữ liệu được đọc từ luồng
+    private byte[] buffer;
+    // Con trỏ chỉ vị trí hiện tại trong buffer
+    private int bufferPointer, bytesRead;
 
-    // Constructor: read by stdin
-    public CustomFastReaderWithBufferReader() {
-        reader = new BufferedReader(new java.io.InputStreamReader(System.in));
+    // Constructor để đọc từ System.in
+    public CustomFastReaderWithDataInputStream() {
+        din = new DataInputStream(System.in);
+        buffer = new byte[BUFFER_SIZE];
+        bufferPointer = 0;
+        bytesRead = 0;
     }
 
-    // Constructor: read by file
-    public CustomFastReaderWithBufferReader(String fileName) {
-        try {
-            reader = new BufferedReader(new FileReader(fileName));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+    public String readLine() throws IOException {
+        byte[] buf = new byte[1024];  // giả sử một dòng không vượt quá 1024 byte
+        int cnt = 0;
+        byte c;
+        // Đọc từng byte cho đến khi gặp ký tự xuống dòng hoặc EOF (-1)
+        while ((c = read()) != -1) {
+            if (c == '\n') break;
+            buf[cnt++] = c;
         }
+        return new String(buf, 0, cnt);
     }
 
-    // Thread close (nên gọi khi đọc xong nếu dùng trong file)
-    public void close() {
-        try {
-            reader.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public int nextInt() throws IOException {
+        int ret = 0;
+        byte c = read();
+        while (c <= ' ') {  // bỏ qua các ký tự trắng
+            c = read();
         }
+
+        // Kiểm tra nếu số âm, nếu có thì thiết lập flag và đọc tiếp ký tự kế
+        boolean neg = (c == '-');
+        if (neg) c = read();
+        // Chuyển các ký tự số thành số nguyên
+        do {
+            ret = ret * 10 + c - '0';
+        } while ((c = read()) >= '0' && c <= '9');
+        return neg ? -ret : ret;
     }
 
-    // Read line
-    public String nextLine() {
-        try {
-            tokenizer = null;  // reset tokenizer
-            return reader.readLine();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public long nextLong() throws IOException {
+        long ret = 0;
+        byte c = read();
+        while (c <= ' ') {
+            c = read();
         }
+        boolean neg = (c == '-');
+        if (neg) c = read();
+        do {
+            ret = ret * 10L + c - '0';
+        } while ((c = read()) >= '0' && c <= '9');
+        return neg ? -ret : ret;
     }
 
-    // check EOF (dành cho input không rõ kích thước)
-    public boolean hasNext() {
-        try {
-            if (tokenizer != null && tokenizer.hasMoreTokens()) return true;
-            reader.mark(1); // đánh dấu vị trí hiện tại của luồng
-            int c = reader.read(); // đọc 1 ký tự
-            if (c == -1) return false; // EOF
-            reader.reset(); // quay lại vị trí đã mark
-            return true;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public double nextDouble() throws IOException {
+        double ret = 0, div = 1;
+        byte c = read();
+        while (c <= ' ') {
+            c = read();
         }
-    }
-
-    public String next() {
-        while (tokenizer == null || !tokenizer.hasMoreTokens()) {
-            try {
-                String line = reader.readLine();
-                if (line == null) return null;  // EOF
-                tokenizer = new StringTokenizer(line.trim());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        boolean neg = (c == '-');
+        if (neg) c = read();
+        do {
+            ret = ret * 10 + c - '0';
+        } while ((c = read()) >= '0' && c <= '9');
+        if (c == '.') {
+            while ((c = read()) >= '0' && c <= '9') {
+                ret = ret + (c - '0') / (div *= 10);
             }
         }
-        return tokenizer.nextToken();
+        return neg ? -ret : ret;
     }
 
-    public int nextInt() {
-        return Integer.parseInt(next());
+    // Hàm đọc 1 byte từ buffer. Nếu buffer hết, sẽ refill buffer.
+    private byte read() throws IOException {
+        if (bufferPointer == bytesRead) {
+            fillBuffer();
+        }
+        return buffer[bufferPointer++];
     }
 
-    public long nextLong() {
-        return Long.parseLong(next());
+    // Nạp dữ liệu mới từ DataInputStream vào buffer. Đặt lại bufferPointer sau khi nạp.
+    private void fillBuffer() throws IOException {
+        // đọc tiếp dữ liệu mới từ luồng đầu vào và ghi đè lên toàn bộ mảng => Dữ liệu đã được đọc trước đó không được lưu lại
+        bytesRead = din.read(buffer, bufferPointer = 0, BUFFER_SIZE);
+        if (bytesRead == -1) {
+            buffer[0] = -1;
+        }
     }
 
-    public double nextDouble() {
-        return Double.parseDouble(next());
-    }
-
-    public int[] nextIntArray(int n) {
-        int[] arr = new int[n];
-        for (int i = 0; i < n; i++) arr[i] = nextInt();
-        return arr;
-    }
-
-    public long[] nextLongArray(int n) {
-        long[] arr = new long[n];
-        for (int i = 0; i < n; i++) arr[i] = nextLong();
-        return arr;
-    }
-
-    public double[] nextDoubleArray(int n) {
-        double[] arr = new double[n];
-        for (int i = 0; i < n; i++) arr[i] = nextDouble();
-        return arr;
+    // Đóng DataInputStream
+    public void close() throws IOException {
+        if (din == null) return;
+        din.close();
     }
 }

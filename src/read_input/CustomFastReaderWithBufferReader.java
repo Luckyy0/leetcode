@@ -7,17 +7,17 @@ import java.io.IOException;
 import java.util.StringTokenizer;
 
 
-public class CustomFastReader {
+public class CustomFastReaderWithBufferReader {
     private final BufferedReader reader;
     private StringTokenizer tokenizer;
 
     // Constructor: read by stdin
-    public CustomFastReader() {
+    public CustomFastReaderWithBufferReader() {
         reader = new BufferedReader(new java.io.InputStreamReader(System.in));
     }
 
     // Constructor: read by file
-    public CustomFastReader(String fileName) {
+    public CustomFastReaderWithBufferReader(String fileName) {
         try {
             reader = new BufferedReader(new FileReader(fileName));
         } catch (FileNotFoundException e) {

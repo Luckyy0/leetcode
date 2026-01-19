@@ -1,0 +1,19 @@
+Scanner - Dễ dùng, nhưng chậm
+	Do đọc chuỗi đầu vào sử dụng regex
+	Tạo đối tương String trung gian để parse sang các kiểu dữ liệu khác
+	=>  Quá nhiều tầng xử lý & tạo đối tượng ⇒ tốc độ thấp, GC nhiều
+	Tệ với xử lý dữ liệu lớn
+BufferedReader + StringTokenizer - Nhanh hơn Scanner nhưng vẫn có vấn đề
+	Có buffer (mặc định 8KB) => giúp giảm I/O
+	Sử dụng StringTokenizer tách chuỗi nhanh, không dùng regex
+	Phải đọc từng dòng (line-by-line) => input trên 1 dòng quá dài có thể gây OutOfMemoryError, StackOverflowError
+DataInputStream - Thô sơ, gần cấp thấp, nhưng không thực sự tối ưu
+	synchronized => Mỗi lần đọc byte phải khóa luồng ⇒ tốn thời gian dù chỉ có 1 thread
+	Không có readInt() cho plain text (readInt() trong DataInputStream dùng cho binary stream: 4 byte big-endian, không thể dùng đọc "123\n")
+	Tự cấu hình buffer
+System.in.read - Tối ưu tuyệt đối
+	Tự cấu hình buffer
+	Không synchronized
+	Không tạo String, không Integer.parseInt()
+
+Trong quá trình ép kiểu, nếu ép kiểu không hợp lý, gây tràn số => thời gian chậy sẽ chậm hơn do phải xử lý tràn số
