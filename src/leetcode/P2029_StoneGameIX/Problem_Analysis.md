@@ -1,0 +1,456 @@
+# Problem Analysis: Stone Game IX
+
+## Problem Description
+Array `stones`. Two players. Alice first.
+Take turns removing stones (add to `sum`).
+Lose if:
+-   Cannot move (stones empty).
+-   `sum` becomes divisible by 3 (except initially 0).
+Return true if Alice wins.
+
+## Analysis
+
+1.  **Modulo 3**:
+    -   Only `val % 3` matters. (0, 1, 2).
+    -   Count `c0, c1, c2`.
+    -   Rules:
+        -   Cannot make sum % 3 == 0.
+        -   If sum % 3 == 1, cannot pick `2` -> becomes `3 (0)`. Can pick `0` (stays 1) or `1` (becomes 2).
+        -   If sum % 3 == 2, cannot pick `1` -> becomes `3 (0)`. Can pick `0` (stays 2) or `2` (becomes 1).
+    -   `c0` can always be used to switch turn without changing sum (extends game).
+    -   Since 0 doesn't change sum state, it flips parity of turns. `c0 % 2` parity matters.
+    -   Strategies:
+        -   Start with 1. Seq: 1, 1, 2, 1, 2, 1, 2...
+            -   Sums: 1, 2, 4(1), 5(2), 7(1)...
+            -   Pattern without 0: 1, 1, 2, 1, 2, 1, 2...
+            -   Actually, sequence 1, (1), 2, 1, 2...
+            -   Sum: 1, 2, 4(1), 5(2)...
+            -   Start with 1. Next must be 1. (Sum 2). Next must be 2. (Sum 1). Next 1...
+            -   Chain: 1 -> 1 -> 2 -> 1 -> 2 -> ...
+        -   Start with 2. Seq: 2, 2, 1, 2, 1, ...
+            -   Sum: 2, 4(1), 5(2)...
+            -   Chain: 2 -> 2 -> 1 -> 2 -> 1 -> ...
+    -   If `c0` is even: 0s can be paired up and disappear for turn logic. Acts as if `c0=0`.
+        -   Alice wins if she can force Bob to run out of valid moves or make bad sum?
+        -   Actually "Player who **starts** empty stones loses? Or "cannot make a move"?
+        -   "If a player cannot make a move, they lose." implies typical normal play. And condition "Sum divisible by 3 => Lose".
+        -   Let's analyze chains with `c0` even:
+            -   Start 1: Need `c1 >= 1`. Then need `c1-1` 1s and `c2` 2s. Pattern 1, 1, 2, 1, 2...
+            -   Actually sequence is 1, 1, 2, 1, 2...
+            -   Consumption: 1, 1, 2, 1, 2...
+            -   Alice takes 1. Bob takes 1. Alice takes 2. Bob takes 1...
+            -   If `c1 == 0`, cannot start 1.
+            -   If `c1 > 0`: Alice takes 1. Remaining `c1-1, c2`.
+            -   Sequence: 1, 2, 1, 2... Bob must match Alice unless ran out.
+            -   If valid sequence exhausts all stones: Sum not div 3. Then next player has no stones?
+            -   If stones run out, last player who moved Wins? "Bob wins if Alice cannot make a move".
+            -   "If sum % 3 == 0, that player loses."
+            -   If stones empty, `sum % 3 != 0`. Game ends. Who wins?
+            -   "If all stones removed and sum not div 3, **Bob wins**." (Usually standard in this Stone Game IX). Let's verify.
+            -   "If a player cannot move, they lose."
+            -   Usually implies: If all stones gone, the NEXT player (who should move but can't) loses. The LAST player wins.
+            -   However, LeetCode description: "If a player removes a stone and sum is div 3, they lose. If all stones are removed, Bob wins."
+            -   Let's stick to "Bob wins if stones exhausted".
+    -   Case `c0` even:
+        -   Alice wins if she can construct a sequence that forces Bob to make sum 0, AND stones NOT exhausted.
+        -   If `c0` even, 0s don't affect outcome relative to exhaustion (Bob wins if exhausted).
+        -   Alice starts 1: needs `c1 > 0`. Run 1, 1, 2, 1, 2...
+            -   Run ends when `c1` or `c2` runs out.
+            -   If run ends because stones empty -> Bob wins.
+            -   If run ends because forced to pick invalid -> Current player loses. (Other wins).
+            -   If Alice starts 1: Run 1, 1, 2, 1, 2...
+            -   After Alice 1: Bob needs 1. Assume Bob has 1. Alice needs 2. Bob needs 1.
+            -   Basically `c1` counts vs `c2` counts.
+            -   Start 1: Uses one 1. Then we need 1s and 2s.
+            -   This consumes `1, 2, 1, 2...`.
+            -   Alice wins if she makes Bob run out of valid moves.
+            -   Bob runs out if he needs a type that is empty.
+            -   Start 1: 1 (A) -> 1 (B) -> 2 (A) -> 1 (B) -> 2 (A)...
+            -   Wait. Pattern depends on available counts.
+            -   If `c1` is small, chain breaks on 1. If `c2` small, on 2.
+            -   Start 1: Alice picks 1. Sum 1.
+            -   Sequence of moves required to keep sum != 0: 1, 1, 2, 1, 2, 1, 2...
+            -   A: 1. Sum 1.
+            -   B: 1. Sum 2. (Needs 1).
+            -   A: 2. Sum 4->1. (Needs 2).
+            -   B: 1. Sum 2. (Needs 1).
+            -   A: 2. Sum 1. (Needs 2).
+            -   B: 1. Sum 2.
+            -   It consumes 1, 1, 2, 1, 2, 1...
+            -   Counts consumed: 1s: 1, 2, 3... 2s: 0, 1, 1, 2...
+            -   Generally, `min(c1, c2)` determines length?
+            -   Alice wins if Bob is forced to illegal or no moves.
+            -   Here Bob is forced to pick specific. If he can't, he loses (Alice wins).
+            -   Condition for Alice win: The chain stops at Bob's turn because he lacks the needed stone.
+            -   Start 1:
+                -   A: 1. (Rem: c1-1, c2).
+                -   Check `c1-1` vs `c2`.
+                -   Sequence requires `1, 2, 1, 2...` from B's perspective? No.
+                -   Sequence is `1 (used), 1, 2, 1, 2...` so remaining needs `1, 2, 1, 2...`
+                -   To win, the sequence must fail on a `1` step (if B needs 1) or `2` (if B needs 2)?
+                -   Wait.
+                -   B needs 1 (step 1). A needs 2. B needs 1. A needs 2.
+                -   Bob needs 1s. Alice needs 2s.
+                -   So Alice wins if `c1 - 1` (B's supply) runs out before `c2` (A's supply)?
+                -   Actually, if `c1 - 1 < c2`: Bob runs out of 1s. Alice has plenty of 2s.
+                -   Bob cannot move. Alice wins? Yes.
+                -   Condition: `c1 - 1 < c2`? i.e. `c1 <= c2`.
+                -   But wait, if stones exhausted, Bob wins.
+                -   So Alice only wins if Bob *cannot* move but stones *remain* (2s remain).
+                -   So if `c1 - 1 < c2`, Bob runs out of 1s. But Alice still has 2s. Since sum != 0, and non-empty, Bob loses?
+                -   Let's check "Bob wins if all stones removed".
+                -   If `c1 - 1 < c2`: 1s run out. 2s remain. Stones not empty. Bob cannot pick 1. Can Bob pick 2?
+                -   If Bob picks 2 (when he needed 1): Sum 2 + 2 = 4 (1). Correct?
+                -   Sequence was: Sum 1.
+                -   B needs to make Sum != 0. Currently 1.
+                -   Matches `1` -> Sum 2. (OK). Matches `2` -> Sum 3 (0). (Lose).
+                -   So B *must* pick 1. If no 1s, B loses.
+                -   So if `c1 - 1 < c2` (and `c1 > 0` to start), Alice wins.
+                -   Also `c0` even means `0`s don't change parity.
+            -   Start 2:
+                -   A: 2. Sum 2.
+                -   Sequence required: 2 (A), 2 (B), 1 (A), 2 (B), 1 (A)...
+                -   B needs 2. A needs 1.
+                -   Alice wins if `c2 - 1 < c1` (B runs out of 2s, 1s remain).
+        -   Summary (c0 even): Alice wins if `c1 == 0`? No. If `min(c1, c2) > 0`? No.
+        -   Alice wins if she can pick a start such that she wins.
+        -   She wins starting 1 if `c2 > c1 - 1`? No `c2 > c1 - 1` implies `c1 <= c2`.
+            -   Wait. If `c1=1, c2=5`. `1, 1(fail)`. B has no 1s. 2s remain. A wins. `1 <= 5`.
+            -   So if `c1 > 0` and `c1 <= c2`, A wins (start 1).
+            -   So if `c2 > 0` and `c2 <= c1`, A wins (start 2).
+            -   Wait. This covers all cases except `c1=0, c2=0`.
+            -   If `c1=0, c2=0`: A cannot move (or picks 0s then loses). No. Sum 0. A cannot pick 1/2.
+            -   Basically if `min(c1, c2) == 0`.
+            -   If `c1=0`: A must start 2? If `c2 > 0`.
+            -   Start 2: `2, 2, 1...` needs `c1`. If `c1=0`, B needs 2.
+            -   `2, 2, 2 (Sum 6=0)`.
+            -   A: 2. B: 2. A: 2 (Lose).
+            -   So if `c1=0`, A loses (assuming `c2 > 2`).
+            -   Basically `min(c1, c2) == 0` -> Alice loses (unless `c0` helps?). `c0` even doesn't help.
+    -   Case `c0` odd:
+        -   `c0` effectively flips turn parity once.
+        -   This is equivalent to Bob playing first with `c0` even? No.
+        -   Alice can use `0` to change who faces the shortage.
+        -   Start 1: `1, 1, 2, 1, 2...`
+        -   Typically A wins if `abs(c1 - c2) > 2`.
+        -   Detailed analysis:
+            -   If `c0 % 2 == 0`: Alice wins if `min(c1, c2) > 0`. (Actually `c1 != 0` and `c2 != 0`).
+            -   Wait, what if `c1=c2`?
+            -   `c1=1, c2=1`. Start 1: `1, 1`. Stones gone. Bob wins.
+            -   Start 2: `2, 2`. Stones gone. Bob wins.
+            -   So `c1 != 0` and `c2 != 0` is not enough.
+            -   Need `stones remaining`.
+            -   Start 1: A wins if `c2 > c1 - 1`.
+                -   Wait. `c1=1, c2=1`. `c2(1) > c1-1(0)`. A wins? Matches condition.
+                -   But logic said "If stones exhausted, Bob wins".
+                -   Start 1 with 1,1: A(1) -> Sum 1. B(1) -> Sum 2. Empty. Bob wins.
+                -   So condition `c2 > c1 - 1` fails for `c1=c2`.
+                -   Ah, "Bob loses if he cannot move". If empty, Bob CANNOT move.
+                -   But "Bob wins if stones removed".
+                -   So B wins if `c1 - 1 == c2` (exact match).
+                -   B wins if `c1 - 1 > c2`? (B has surplus, A runs out). A loses.
+                -   So A wins only if `c1 - 1 < c2`. (B runs out first).
+                -   So `c2 > c1 - 1` => `c2 >= c1`.
+                -   Let's re-verify `c1=1, c2=1`. `1 >= 1`.
+                -   My logic: `c1 - 1` 1s needed by B. `c2` 2s needed by A.
+                -   Sequence: A(1) [needs 0], B(1) [needs 1], A(2) [needs 2], B(1) [needs 1]...
+                -   If `c1=1, c2=1`.
+                -   A(1). Rem 0, 1. B(1). Rem 0, 0. Empty. B wins.
+                -   So `c2 >= c1` is WRONG for A win.
+                -   The one who runs out of supply LOSES (because they can't make move or exhausted).
+                -   If `c1=c2`, both run out exactly? B makes last move. Exhausted. B wins.
+                -   So A needs `c2` to NOT run out when B runs out?
+                -   Basically A needs the sequence to end on B's turn with stones remaining.
+                -   Length of sequence determined by `min(...)`.
+                -   A wins if `c1 - 1 < c2`?
+                    -   If `c1=1, c2=2`.
+                    -   A(1). B(1). A(2). Empty. B wins.
+                    -   Condition `1 < 2`.
+                -   So A needs to force B to fail BEFORE empty.
+                -   This requires B to need a stone that is gone, WHILE stones of other type remain.
+                -   Implies `c1 - 1` (B's 1s) exhausted ` < c2`? No.
+                -   Check `c1=1, c2=5`.
+                -   A(1). B(1). A(2). B needs 1. Has none. 2s remain (4). B loses. A wins.
+                -   So YES. If `c1 - 1 < c2`? And stones > 0 remains?
+                -   `c1=1, c2=2`. Remainder 1 (count of 2s).
+                -   In `1, 2` case, A made last move. B needs 1. None left. But 2s empty too?
+                -   Wait. `c1=1, c2=2`.
+                -   A(1). B(1). A(2).
+                -   Stones gone. B wins.
+                -   For A to win, we need B to face empty 1s while 2s are NOT empty.
+                -   So `c2 > (c1 - 1) + 1`? (Alice used one 2).
+                -   Let's trace consumption.
+                -   Round 1: A(1), B(1). Consumed 1, 1.
+                -   Round 2: A(2), B(1). Consumps 2, 2. (c1 needs 2)
+                -   Round k: A(2), B(1).
+                -   Total 1s: `1 + (k-1) = k`. Total 2s: `k-1`.
+                -   If `c1=k`. `c2=k-1`.
+                -   B faces shortage if `c1` runs out before he moves?
+                -   Wait. B uses 1s. A uses 2s.
+                -   B fails if `count(1) < needed`.
+                -   Needed by B: 1 in R1, 1 in R2...
+                -   A wins if B fails.
+                -   With `c0` even: A wins if `min(c1, c2) == 0`. No.
+                -   Correct Logic from solutions:
+                    -   If `c0` even: A wins if `c1 >= 1` and `c2 >= 1`. No.
+                    -   If `c0` even: A wins if `min(c1, c2) != 0`? No.
+                    -   Correct: If `c0 % 2 == 0`: Alice wins if `min(c1, c2) >= 1`.
+                    -   Verified: `1, 1` -> B wins.
+                    -   The solution says "Alice wins if `min(c1, c2) == 0`? NO.
+                    -   Let's use established condition:
+                        -   If `c0` even: A wins if `min(c1, c2) == 0`? No, that's immediate loss for A (forced to repeat or 0).
+                        -   Actually, if `c0` even, A wins if `c1 != 0` AND `c2 != 0`?
+                        -   Let's check `1, 1`. A loses.
+                        -   Maybe `c0` counts just shift parity?
+                        -   Final Rule (from known logic):
+                            -   If `c0` is even: Alice wins if `min(c1, c2) >= 1`? No.
+                            -   Alice wins if `min(c1, c2) == 0`. (Wait, let's re-verify).
+                            -   `c1=1, c2=0`. Start 1: `1`. B needs 1. Has 0. 2s 0. Empty? No. `c1=1` consumed. Empty. B wins.
+                            -   Start 2: No 2.
+                            -   So `c1=1, c2=0` -> A loses.
+                            -   Alice wins if `min(c1, c2) > 0`?? check `1, 1`.
+                            -   There is a condition about `abs(c1 - c2)`.
+                            -   If `abs(c1 - c2) >= 3`? Not for even count.
+                            -   Let's look at `c0` odd.
+                                -   A wins if `abs(c1 - c2) > 2`.
+                            -   If `c0` even:
+                                -   A wins if `min(c1, c2) > 0`. (This seems wrong for `1, 1`).
+                                -   Check source/logic carefully.
+                                -   If `c0` is even, Alice wins iff `min(c1, c2) >= 1`.
+                                    -   Wait, my simulation of `1, 1` said B wins.
+                                    -   Maybe Bob wins if *stones exhausted*.
+                                    -   Is `1, 1` exhausted? Yes. So B wins. A loses.
+                                    -   So `min(c1, c2) >= 1` is NOT sufficient.
+                                    -   Maybe `min(c1, c2) == 0`? `1, 0` -> A loses. `0, 1` -> A loses. `0, 0` -> A loses.
+                                    -   So `c0` even -> Alice ALWAYS loses? No.
+                                    -   Try `5, 1`. A wins. `1, 5`. A wins.
+                                    -   Condition likely: `min(c1, c2) >= 1`. (My simulation of `1, 1` -> lose. `1, 2` -> lose. `1, 3`?)
+                                    -   `1, 3`:
+                                        -   A(1). B(1). A(2). B(1) empty. Lose. A(2) rem.
+                                        -   Stones sum 1+1+2 = 4. 2 remaining.
+                                        -   B needs 1. Has none. 2s remain. A wins.
+                                    -   So `1, 3` A wins. `3, 1` A wins.
+                                    -   So `c0` even: A wins if `min(c1, c2) >= 1`.
+                                    -   Wait. `1, 1` -> Lose. `1, 2` -> Lose?
+                                    -   `1, 2`: A(1), B(1), A(2). Empty. B wins.
+                                    -   So `1, 2` Lose.
+                                    -   `1, 3` Win.
+                                    -   `2, 2`: A(2), B(2), A(1)... `2, 2, 1, 2`. Consumes `2, 2`.
+                                    -   A(2). B(2). A(1) [needs 1]. B(2) [needs 2].
+                                    -   `2, 2`: A(2), B(2). Needs 1? No, `2, 2` sum 4(1). Next needs 2? Sum 6(0).
+                                    -   Seq: 2, 2, 2... fails.
+                                    -   Seq: 2, 2, 1? Sum 5(2). OK.
+                                    -   R1: A(2), B(2). Need `c2 >= 2`.
+                                    -   R2: A(1). `c1 >= 1`.
+                                    -   `2, 2` case: A(2), B(2). Rem `1, 1`? No `0, 0`. Empty. B wins.
+                                    -   So `2, 2` Lose.
+                                    -   Pattern: `1, 1` L, `1, 2` L, `1, 3` W, `1, 4` W...
+                                    -   `2, 1` L, `2, 2` L, `2, 3` L?
+                                    -   It seems A wins if `min(c1, c2) >= 1` AND something else?
+                                    -   Actually, simpler condition exists.
+                                    -   If `c0` even: Alice wins iff `c1 >= 1` and `c2 >= 1`.
+                                        -   Wait. `1, 1` -> A loses. So condition wrong.
+                                        -   Maybe LeetCode solution logic:
+                                            -   If `c0` even: A wins if `min(c1, c2) >= 1` IS WRONG.
+                                            -   A wins if `c1 == 0`? No.
+                                            -   Let's check `c0` odd.
+                                            -   If `c0 % 2 == 1`: A wins if `abs(c1 - c2) >= 3`.
+                                    -   Back to `c0` even:
+                                        -   Maybe `c1 >= 1 && c2 >= 1` is correct and I messed up "Bob wins if exhausted"?
+                                        -   "Bob wins if all stones removed". Yes.
+                                        -   But checking `1, 3` worked. `1, 2` failed.
+                                        -   Usually problem conditions simplify to `c0 % 2 == 0`: A wins if `min(c1, c2) >= 1`.
+                                        -   Wait. Is `1, 1` really losing?
+                                        -   Maybe Bob plays badly? No, optimal.
+                                        -   Wait. If A starts 1. 1, 1. B wins.
+                                        -   If A starts 2. 2, 2. B wins (if 2s exist).
+                                        -   So A loses `1, 1`.
+                                        -   Is there any strategy I missed? `0`s? `c0` even.
+                                        -   Maybe A picks 0? Flips turn?
+                                        -   If `c0 > 0` even. A(0). B(0)... A(0). B(0). Same state.
+                                        -   Essentially `c0` even is identity.
+                                        -   So `1, 1` is lose.
+                                        -   Condition `min(c1, c2) >= 1` is false.
+                                        -   Correct condition found in literature for P2029:
+                                            -   If `c0 % 2 == 0`: A wins if `min(c1, c2) >= 1`. (Many sources say this).
+                                            -   Why? Maybe I missed a win path for `1, 1`?
+                                            -   Or maybe "Bob wins if exhausted" is wrong interpretation?
+                                            -   "If Alice cannot make a move, she loses."
+                                            -   "If Bob cannot make a move, he loses."
+                                            -   "If sum % 3 == 0, current player loses."
+                                            -   Check `1, 1`.
+                                            -   A(1). Remain `0, 1`. Sum 1.
+                                            -   B needs 1. Pick 1. Remain `0, 0`. Sum 2.
+                                            -   A needs 2? Or 0? A picks 0? No 0s.
+                                            -   A cannot move. A loses (Bob wins).
+                                            -   So `1, 1` is B wins.
+                                            -   So condition must be stricter.
+                                            -   Maybe `c0` odd helps A?
+                                            -   Condition for `c0` even: `min(c1, c2) >= 1` AND what?
+                                            -   Actually, if `c0` even, A wins if NO.
+                                            -   Let's assume the correct Logic is:
+                                                -   `c0` even: A wins if `min(c1, c2) >= 1`. (Sources might be wrong or definition different).
+                                                -   Actually, let's verify `1, 2`.
+                                                -   A wins?
+                                                -   A(1). B(1). A(2). Empty. B wins.
+                                                -   A(2). B(2). A(1). Empty. B wins.
+                                                -   So `1, 2` is lose.
+                                                -   So `c0` even means A loses often.
+                                                -   What if A wins only if `abs(c1 - c2) >= ?`? No.
+    -   Let's check the solution directly via simulation/logic.
+    -   Key: `c0` can be used to extend the game.
+    -   If `c0` even: acts like 0.
+        -   Winner determined by `c1, c2`.
+        -   A wins if `c1=0`? No.
+        -   A wins if `c1 >= 1 && c2 >= 1`? No.
+        -   A wins if `min(c1, c2) >= 1`? No.
+        -   Wait. If `c1=0, c2=3`.
+            -   A(2). B(2). A(2). Empty. B wins.
+        -   So single color is always Lose for A (start 1 fails, start 2 runs out).
+        -   So `min(c1, c2) == 0` -> Lose.
+        -   What about `1, 3`? Win.
+        -   So A wins `1, 3` but loses `1, 2`.
+        -   So A loses if `abs(c1 - c2) <= ...`? No.
+        -   `1, 3`: `abs=2`. Win.
+        -   `1, 2`: `abs=1`. Lose.
+        -   `1, 1`: `abs=0`. Lose.
+        -   So maybe `abs(c1 - c2) >= 2`? No, `1, 3` win.
+        -   Let's assume `c0` even: Win if `min(c1, c2) > 0`.
+            -   Maybe I processed "B wins if exhausted" correctly?
+            -   Yes.
+            -   Maybe my `1, 3` is wrong?
+            -   A(1). B(1). A(2). B(1) [needs 1, has 0]. 2s remain (1).
+            -   Wait. `1, 3`. c1=1, c2=3.
+            -   A(1). B(1). A(2). Rem 2.
+            -   B needs 1. Has none. 2s remain. A wins!
+            -   So `1, 3` is Win.
+            -   Wait. `1, 2`. c1=1, c2=2.
+            -   A(1). B(1). A(2). Rem 0. Empty. B wins.
+            -   So `1, 2` is Lose.
+            -   What about `2, 1`? Lose.
+            -   So `c0` even: A wins if `min(c1, c2) > 0`. (Except `1, 2`, `2, 1`, `1, 1` etc?)
+            -   Wait. `1, 4`. A(1), B(1), A(2), B(1)...
+                -   A(1). B(1). A(2). B needs 1.
+                -   If `c1=1`, B fails.
+                -   Wait. B needs 1 only if sequence continues 1, 2, 1, 2.
+                -   Does B have choice?
+                -   Sum 4. Mod 1. To avoid 0, must add 1 -> 2. must add 2 -> 0 (fail).
+                -   So B forced to add 1.
+                -   So sequence is rigid.
+                -   If `c1` runs out at B's turn, A wins.
+                -   This happens if `c1` exhausted, and `c2` remaining.
+                -   Start 1: A wins if `c1` runs out for B.
+                -   Seq: A(1), B(1), A(2), B(1), A(2), B(1)...
+                -   Counts:
+                    -   Step 1: 1 (A, c1).
+                    -   Step 2: 1 (B, c1).
+                    -   Step 3: 2 (A, c2).
+                    -   Step 4: 1 (B, c1).
+                    -   Step 5: 2 (A, c2).
+                    -   Step 6: 1 (B, c1).
+                -   B needs 1 at steps 2, 4, 6...
+                -   Condition for A win: `c1` insufficient for step `2k` while `c2` sufficient?
+                -   Basically A wins if sequence stops at B.
+                -   Scenario: Start 1.
+                    -   If `c1=0`: A cannot start 1.
+                    -   If `c1 > 0`: A takes 1.
+                    -   Then `c1` remaining `C1 = c1 - 1`. `c2` remaining `C2 = c2`.
+                    -   Loop: B(1), A(2). Cost (1, 1).
+                    -   Repeats `min(C1, C2)` times.
+                    -   If `C1 == C2`: Ends after `C1` pairs. `1, 2` exhausted. Empty? Or leftovers?
+                        -   If leftovers? `C1=C2`. Both run out. Empty. B wins.
+                    -   If `C1 < C2`: 1s run out. Loop ends.
+                        -   Who needed 1? B.
+                        -   So B cannot move. `C2` (2s) remain? Yes.
+                        -   So A wins.
+                        -   Condition: `c1 - 1 < c2`. (i.e. `c1 <= c2`).
+                        -   Wait. This implies `1, 2` (c1=1, c2=2) -> `0 < 2`. A wins?
+                            -   My previous trace A(1)B(1)A(2) empty.
+                            -   Trace logic:
+                                -   A(1). Left `0, 2`.
+                                -   Loop `min(0, 2) = 0`.
+                                -   Did loop run? No.
+                                -   Next needed: B(1). Count 0. B fails?
+                                -   Is it empty? `0, 2`. No.
+                                -   So B fails. A wins.
+                                -   Why did I think `1, 2` empty?
+                                -   Ah, `A(1), B(1), A(2)`.
+                                -   Wait. Sequence A(1) sum 1. B(1) sum 2. A(2) sum 4(1).
+                                -   A(2) needs 2. `c2` used.
+                                -   My loop `B(1), A(2)` implies B takes 1, A takes 2.
+                                -   This matches `sum 1 -> 2 -> 1`.
+                                -   In `1, 2`:
+                                    -   A(1). Sum 1.
+                                    -   B(1). Sum 2. (Left `0, 2`? No, `0, 2` after A(1). After B(1): ` (-1), 2`. Impossible).
+                                    -   So B needs 1. Has 0. B fails. A wins.
+                                    -   So `1, 2` IS A WIN.
+                                    -   My manual trace `A(1), B(1)` assumed B has a 1.
+                                    -   A takes 1. c1=0.
+                                    -   B needs 1. c1=0. B fails.
+                                    -   Stones remaining: `0, 2`. Not empty. A wins.
+                                    -   So `1, 2` is Win.
+                                    -   What about `1, 1`?
+                                        -   A(1). c1=0.
+                                        -   B needs 1. c1=0.
+                                        -   Stones `0, 1` (2s).
+                                        -   A wins.
+                                        -   Wait. `1, 1`.
+                                        -   A(1). B needs 1. Fails.
+                                        -   Stones remaining `0, 1`. Not empty.
+                                        -   So `1, 1` is Win??
+                                        -   Lets trace `1, 1` exhausting.
+                                        -   A(1). B needs 1.
+                                        -   Why does B need 1? Sum 1.
+                                        -   Next sum should not be 0.
+                                        -   If B picks 1: Sum 2. (OK).
+                                        -   If B picks 2: Sum 3 (0). (Lose).
+                                        -   So yes, B MUST pick 1.
+                                        -   If B has no 1, B loses.
+                                        -   Unless ALL stones empty.
+                                        -   In `1, 1`: A takes 1. Rem `0, 1`.
+                                        -   B needs 1. None.
+                                        -   But 2s count is 1. Not empty.
+                                        -   So B cannot move. B loses. A wins.
+                                        -   So `1, 1` is Win.
+                                        -   Does A lose `1, 0`?
+                                            -   A(1). Rem `0, 0`.
+                                            -   B needs 1. None.
+                                            -   Stones empty. B wins.
+                                            -   So `1, 0` Lose.
+                                        -   Conclusion: If `c0` even:
+                                            -   A wins if `min(c1, c2) >= 1`?
+                                            -   If `c1 > 0`, A starts 1 and wins (forces B to run out of 1s while 2s remain, or vice versa? No).
+                                            -   Logic: A starts 1. wins if `c1-1 < c2`. (B runs out of 1s, 2s remain).
+                                            -   Logic: A starts 2. wins if `c2-1 < c1`. (B runs out of 2s, 1s remain).
+                                            -   If `min(c1, c2) >= 1`:
+                                                -   `c1 <= c2`? Then `c1-1 < c2`. A starts 1 and wins.
+                                                -   `c2 <= c1`? Then `c2-1 < c1`. A starts 2 and wins.
+                                                -   So A always wins if `c1 >= 1` and `c2 >= 1`.
+    -   Summary:
+        -   `c0` even: A wins if `c1 > 0` and `c2 > 0`. (Lose if `(c1=0 or c2=0)`).
+        -   `c0` odd:
+            -   Behaves like `c0` even but reversed advantage?
+            -   Actually `c0` allows A to pass turn once? Or B?
+            -   Actually `abs(c1 - c2) >= 3`.
+            -   Let's check `c0` odd for `1, 1`:
+                -   A(0). B faces `c0` even `1, 1`. B wins (since A logic applies to B).
+                -   So A loses `1, 1` with `c0` odd.
+                -   Assume logic `abs(c1 - c2) > 2`. `1, 1` diff 0. Lose. Correct.
+            -   Check `1, 4` with `c0` odd. `diff 3`.
+                -   A(0). B faces `1, 4` with `c0` even. B starts 1/2?
+                -   B starts 1: `c1` runs out? `c1=1, c2=4`. B wins.
+                -   B starts 2: `c2` runs out? `4 > 1`. B loses? No B wins by starting 1.
+                -   So if B can win, A (starting 0) loses.
+                -   So `abs >= 3` logic: if `abs` small, B wins. A loses.
+                -   Wait. If `c1=0, c2=3`. A wins?
+                -   `c0` odd.
+                -   A(0). B faces `0, 3` even.
+                -   B starts 1 impossible. Start 2: `3-1 < 0` False.
+                -   B faces Lose condition for `c0` even.
+                -   So B loses. A wins.
+                -   So `c1=0, c2=3` (diff 3) -> A wins.
+                -   So `abs(c1 - c2) > 2` holds.
+
+## Implementation Details
+-   `cnt[3]`.
+-   Logic check.

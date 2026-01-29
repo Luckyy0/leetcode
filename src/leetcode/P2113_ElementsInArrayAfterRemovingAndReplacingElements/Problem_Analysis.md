@@ -1,0 +1,345 @@
+# Problem Analysis: Elements in Array After Removing and Replacing Elements
+
+## Problem Description
+Grid/Simulation.
+Start with `nums`.
+Minute 0: `nums`.
+Action: Every minute:
+-   If current array non-empty, remove first element. Add removed element to END of `next_nums`.
+-   Wait. Description is tricky.
+-   "You maintain an array... initially nums."
+-   "Every minute, if array not empty, remove smallest index element... append to separate array 'removed'."
+-   "If array becomes empty... replace it with 'removed' and clear 'removed'."
+-   Cycle:
+    -   Start size `n`.
+    -   Takes `n` minutes to empty. During this `0..n-1` minutes:
+        -   At time `t` (0 to n-1): We removed `t` elements. Remaining start at `nums[t]`.
+        -   Query asks for element at `index`.
+        -   Remaining array is `nums[t...n-1]`.
+        -   So index `k` refers to `nums[t+k]`.
+    -   At minute `n`: Array is empty. Replaced by `removed` (which is original `nums`).
+    -   Wait. Is order preserved in `removed`? "Append to separate array". Yes, order preserved (removed 0, then 1...). So `removed` is `nums`.
+    -   So array resets to `nums` every `2*n` minutes? Or `n` minutes?
+    -   Let's trace:
+        -   Start: `[0, 1, 2]`. $t=0$. Array `[0, 1, 2]`.
+        -   Minute 1 (after op): Removed 0. Array `[1, 2]`.
+        -   Minute 2: Removed 1. Array `[2]`.
+        -   Minute 3: Removed 2. Array `[]`. -> Replaced by `[0, 1, 2]`.
+        -   Minute 4: Removed 0...
+    -   Wait. At exact minute $t$, what is the state?
+    -   $t=0$: `[0, 1, 2]`.
+    -   $t=1$: `[1, 2]`.
+    -   $t=2$: `[2]`.
+    -   $t=3$: `[]`. Instantly replaced? "If array becomes empty, replace it...".
+    -   So at $t=3$, start of minute, it is empty -> replaced -> `[0, 1, 2]`.
+    -   But operations happen "Every minute".
+    -   Does op happen at $t=3$?
+    -   Usually: State at time $t$ is after $t$ operations.
+    -   But problem says "At minute 0... array is nums". "Every minute (step)...".
+    -   Constraints usually clarify time.
+    -   Cycle length:
+        -   If empty array is replaced immediately, we iterate `nums` shifting start?
+        -   Wait. Cycle seems to be `size` decreases then increases? No, simply replaced.
+        -   Wait "Element ... at index ... at time ...".
+        -   Let check Example 1: `nums=[0, 1, 2]`.
+        -   $t=0$: `[0, 1, 2]`.
+        -   $t=1$: `[1, 2]`.
+        -   $t=2$: `[2]`.
+        -   $t=3$: `[0, 1, 2]`? Or empty?
+        -   Example output for `time=3`? If `nums=[2], index=0` -> 2.
+        -   Wait. Example says:
+            -   `time=0`: `[0,1,2]`.
+            -   `time=1`: `[1,2]`.
+            -   `time=2`: `[2]`.
+            -   `time=3`: `[]` then replace -> `[0,1,2]`. But query asks BEFORE replace or after?
+                -   If at $t=3$, it's `[0,1,2]`.
+            -   `time=4`: `[1,2]`.
+    -   Cycle length is `2*n`? Or `n`?
+        -   If `n=3`. State repeats $0, 1, 2$. $3 \equiv 0$?
+        -   It says "If ... empty ... replace".
+        -   So $3$ becomes $0$.
+        -   So cycle length is `n`?
+        -   Wait. If `replace` means strictly restoring, then yes `n`.
+        -   Wait. Is `removed` cleared? Yes.
+        -   BUT: "At minute ... if array not empty ... remove ... append ... ELSE replace".
+        -   This is `if-else`.
+        -   Cycle:
+            -   Steps 1 to n: remove.
+            -   Step n+1: replace? (Since empty).
+            -   Let's check logic:
+            -   Start `len = n`.
+            -   $t=0$: full.
+            -   $t=1$: $n-1$.
+            -   ...
+            -   $t=n$: empty. (0 size).
+                -   Step at $t=n$ (transition to $n+1$): Empty -> Replace with `removed`. `removed` clears.
+            -   Wait. If queries happen AT time $t$.
+            -   Query 0: `[0, 1, 2]`.
+            -   Query 1: `[1, 2]`.
+            -   Query 2: `[2]`.
+            -   Query 3: `[]`.
+            -   Query 4: `[0, 1, 2]`. (Transition happen between 3 and 4?)
+            -   Wait. Example 1: `nums=[2]`. $t=0 \to [2]$. $t=1 \to []$. $t=2 \to [2]$.
+            -   Wait. If $n=1$.
+            -   $0: [2]$.
+            -   $1: []$.
+            -   Queries at time 1? Returns -1.
+            -   So empty state IS VISIBLE.
+            -   So cycle length is `2n`?
+            -   Let's check `nums=[0,1,2]`.
+                -   0: `[0,1,2]` (rem `[]`).
+                -   1: `[1,2]` (rem `[0]`).
+                -   2: `[2]` (rem `[0,1]`).
+                -   3: `[]` (rem `[0,1,2]`).
+                -   4: `[0,1,2]` (rem `[]` - replaced).
+                -   Wait. Transitions:
+                    -   $0 \to 1$: Remove 0.
+                    -   $1 \to 2$: Remove 1.
+                    -   $2 \to 3$: Remove 2. Array becomes empty. `removed` is full.
+                    -   $3 \to 4$: Array empty -> Replace. Array becomes `[0,1,2]`. `removed` cleared.
+            -   Visible states:
+                -   0: size 3.
+                -   1: size 2.
+                -   2: size 1.
+                -   3: size 0.
+                -   4: size 3 (same as 0 but... wait. 4 is after replace?).
+                -   Wait. If loop is:
+                    -   If not empty: remove.
+                    -   Else: replace.
+                -   Then at time 3 (state `[]`), next step is "Replace". So state at 4 is `[0,1,2]`.
+                -   So cycle is: 0, 1, 2, 3 (empty). Then 4 is 0.
+                -   Values: `2, 2, -1`. `t=0,1,2,3`.
+                -   Example: `nums=[2]`. n=1.
+                -   Query: `[[0,0],[1,0],[2,0],[3,0]]`.
+                -   Output: `[2, -1, 2, -1]`.
+                -   Cycle: `2, -1`. Length 2. `2 * n`.
+                -   Wait. If $n=3$, cycle is $4$? Or $6$?
+                -   For $n=1$: `0: [2]`, `1: []`, `2: [2]`. Period 2.
+                -   For $n=3$: `0,1,2,3`. Period 4?
+                -   Logic:
+                    -   Time $t$.
+                    -   Effective time = $t % (2*n)$?
+                    -   Wait. `n` steps to empty. `1` step to fill. Total $n+1$?
+                    -   For $n=1$: 0->rem->empty(1). 1->replace->full(2). Period 2. $n+1 = 2$.
+                    -   For $n=3$: 0..3 (4 states). Period 4.
+                    -   Generally Period $P = n + ?$. Wait.
+                    -   Let's check logic: "If empty... replace". Does it take a minute? Yes.
+                    -   So array stays empty for 1 minute? From $n$ to $n+1$.
+                    -   So at $t=n$, array is empty. At $t=n+1$, it is full.
+                    -   So period is $n+1$??
+                    -   BUT example 1: $n=1$. Output `2, -1, 2`. $t=0 \to 2$. $t=1 \to -1$. $t=2 \to 2$. Period 2. Matches $n+1$.
+                    -   Wait. `n=1`. $1+1=2$.
+                    -   Is it always $n+1$?
+                    -   Let's check "Append to separate array" behavior again.
+                    -   Maybe "Remove and Append" cycle is actually 2n?
+                    -   No, simple:
+                        -   State 0: `nums` (len n).
+                        -   State 1: `nums[1:]` (len n-1).
+                        -   ...
+                        -   State n: `[]`.
+                        -   State n+1: `nums`. (After 'replace').
+                    -   Length of cycle is $n+1$.
+                    -   Wait. This implies indices are simply `(t % (n+1))`.
+                    -   If `curr_t < n`: array is `nums[curr_t ... ]`.
+                    -   If `curr_t == n`: array is `[]`.
+                    -   Query index `k` at time `t`:
+                        -   `eff_t = t % (n + 1)`.
+                        -   If `eff_t == n`: return -1 (empty).
+                        -   Array starts at `eff_t`. `val = nums[eff_t + k]`.
+                        -   If `eff_t + k >= n`: return -1.
+
+    -   Wait. Is there a case where it fills gradually?
+        -   Problem text: "replace it with 'removed'". Immediate full restore.
+        -   So my logic holds. Period $n+1$.
+        -   Wait. Is period really n+1?
+        -   Re-read Example 2: `nums=[0,1,2]`.
+        -   Queries: `[[0,2],[2,0],[3,2],[5,0]]`.
+        -   Output: `[2, 2, -1, 0]`.
+        -   $n=3$.
+        -   $t=0$: `[0,1,2]`. $idx=2 \to 2$.
+        -   $t=2$: `[2]`. (`eff=2`). $idx=0 \to 2$.
+        -   $t=3$: `[]`. (`eff=3`). $idx=2 \to -1$.
+        -   $t=5$: `[1,2]`. (`eff=5%4=1`). $idx=0 \to 1$.
+        -   Wait. Output says `5,0` gives `0`.
+        -   My logic ($eff=1$) -> `nums[1+0] = 1`.
+        -   Example output is `0`.
+        -   Why?
+        -   Maybe period is NOT $n+1$.
+        -   Maybe it fills gradually?
+        -   "If array becomes empty, replace it with removed...".
+        -   But "removed" is accumulated gradually.
+        -   Maybe in "filling phase", we are removing from `removed`? No.
+        -   Ah. Read carefully: "Every minute... if not empty... append to removed."
+        -   "If empty... replace it with removed and clear removed."
+        -   Maybe "removed" contains elements in order removed.
+        -   Wait. Look at example 2 carefully again.
+        -   $t=5 \to 0$.
+        -   If cycle is $2n$? Let's try $2n = 6$.
+        -   $5 % 6 = 5$.
+        -   What is state 5?
+        -   State 0: `[0,1,2]`.
+        -   State 1: `[1,2]`. Rem: `[0]`.
+        -   State 2: `[2]`. Rem: `[0,1]`.
+        -   State 3: `[]`. Rem: `[0,1,2]`. -> Action: Replace.
+        -   Does "Replace" happen AT minute 3 (before query)? Or is it the action FOR minute 3 (transition to 4)?
+        -   "Every minute...". "At minute 0...".
+        -   Usually actions happen between minutes.
+        -   If at min 3, array is empty. Action happens (replace).
+        -   So at min 4, array is `[0,1,2]`.
+        -   So $t=4$ is same as $t=0$.
+        -   So period is $n+1$? But then $t=5$ is same as $t=1$ (`[1,2]`). Query index 0 gives 1.
+        -   Example output is `0`.
+        -   Why is `0` at index `0` at time `5`?
+        -   `0` is `nums[0]`.
+        -   Only way is if array is `[0...]` at time 5.
+        -   Maybe at time 4 it's `[]`? No.
+        -   Maybe inverse?
+        -   Wait. "If array becomes empty... replace it with removed".
+        -   Is `removed` cleared? Yes.
+        -   Could it be that we don't *replace* and clear instantly, but *move back*?
+        -   Or maybe the cycle is `2*n`.
+        -   If $2n$ cycle:
+        -   $0: [0,1,2]$.
+        -   $1: [1,2]$.
+        -   $2: [2]$.
+        -   $3: []$.
+        -   $4: [0]$.
+        -   $5: [0,1]$.
+        -   $6: [0,1,2]$.
+        -   This would explain $t=5$ has `0` at index `0`.
+        -   Does this match "replace it with removed"?
+        -   No. "Replace it with removed" implies `nums = removed`.
+        -   If `removed` is `[0,1,2]`, then `nums` becomes `[0,1,2]`.
+        -   So instantly full.
+        -   Wait. Maybe I am misunderstanding "append to separate array" and "replace".
+        -   Is `removed` preserved?
+        -   Maybe there's a logic I missed.
+        -   Checking online resources or deeper logic.
+        -   Wait, is `removed` built element by element? Yes.
+        -   Is it possible the cycle involves: First empty `nums`, fill `removed`. Then empty `removed`, fill `nums`?
+        -   Basically: Phase 1: remove from start of `nums` (add to `removed`). Phase 2: remove from start of `removed`??
+        -   Re-read carefully: "If array non-empty... remove first... append to removed."
+        -   "If array IS empty... replace it with removed... clear removed."
+        -   Wait. If array IS empty, we replace it.
+        -   Does this "Replace" operation consume a minute?
+        -   "Every minute... If empty, replace".
+        -   So if empty at start of minute, we replace.
+        -   Then array is full.
+        -   Do we *also* do the remove operation in the *same* minute?
+        -   Usually "If X do A else do B".
+        -   So if empty, we replace. We do NOT remove.
+        -   So it stays full for that minute?
+        -   And next minute we start removing.
+        -   Let's trace logic with "Replace consumes minute":
+            -   $t=0$: `[0,1,2]`. (Action: remove 0).
+            -   $t=1$: `[1,2]`. (Action: remove 1).
+            -   $t=2$: `[2]`. (Action: remove 2).
+            -   $t=3$: `[]`. (Action: Array empty -> Replace with `[0,1,2]`).
+            -   $t=4`: `[0,1,2]`. (Action: remove 0).
+            -   $t=5`: `[1,2]`.
+            -   This leads to $t=5$ being `[1,2]`. Index 0 is 1. WRONG (Ex says 0).
+
+    -   Alternative Hypothesis: $2n$ cycle where we perform "reverse" operation?
+        -   No, text doesn't say that.
+    -   Let's reconsider Example 1: $n=1, [2]$.
+        -   $t=0$: `[2]`. (Rem 2).
+        -   $t=1$: `[]`. (Empty -> Replace `[2]`).
+        -   $t=2$: `[2]`. (Rem 2).
+        -   Output: `[2, -1, 2]`. $t=1$ gives -1.
+        -   This matches my trace (State at $t=1$ is empty).
+    -   So $n=1$ works with Period 2 ($n+1$).
+    -   Why $n=3$ fails?
+    -   Maybe `removed` is `[2, 1, 0]`? (Append means Add to End).
+    -   Maybe `remove smallest index`? Yes 0.
+    -   Is there any chance Example 2 output in description is different than what I think?
+    -   I see $t=5$ result is $0$ which requires array `[0...]`.
+    -   Is it possible the cycle is $2n$?
+    -   $0: [0,1,2]$.
+    -   $1: [1,2]$.
+    -   $2: [2]$.
+    -   $3: []$.
+    -   $4: [0,1]$. (Where did this come from?)
+    -   $5: [0,1,2]$. (Wait, then $5,0 \to 0$. $5,2 \to 2$).
+    -   This would match.
+    -   How to justify $3 \to 4 \to 5$?
+    -   At $t=3$, empty. Replaced by `removed`.
+    -   Maybe "Replace" is not instantaneous full?
+    -   Maybe "Replace" means we *start* using `removed` as the source?
+    -   And we do something else?
+    -   Maybe the problem is simpler. "Elements ... After Removing and Replacing".
+    -   Wait. Look at the title. "Removing and Replacing".
+    -   Maybe operations alternate?
+    -   "If array empty, replace".
+    -   What if the cycle is: Decimation (0 to n), Accumulation?
+    -   Actually, let's look at the example values again.
+    -   $t=5, index=0 \to 0$.
+    -   If cycle is $2n$.
+    -   $0, 1, 2$ (remove from front).
+    -   $3, 4, 5$ (add to back?).
+    -   If $t=3$, empty.
+    -   If $t=4$, `[0]`.
+    -   If $t=5$, `[0, 1]`.
+    -   If $t=6$, `[0, 1, 2]`.
+    -   This matches.
+    -   This looks like:
+        -   $0 \dots n$: Remove from front.
+        -   $n \dots 2n$: Append to back?
+    -   Does the text support this?
+    -   "If array not empty... remove ... append to removed."
+    -   "If array empty... replace it with removed".
+    -   Maybe "removed" is not "separate array" but we are just appending to it?
+    -   Wait. If `removed` is `[0, 1, 2]`. And we replace `nums` with `removed`.
+    -   Why would it be `[0]` then `[0,1]`?
+    -   This implies we are *iterating* `removed`.
+    -   Is it possible the problem description I have is incomplete/summarized?
+    -   "You maintain ... initially nums."
+    -   Maybe "If empty... swap roles?"
+    -   Let's check P2113 exact text if possible? I can't browse.
+    -   But based on "Cycle of 2n" pattern:
+        -   $t \in [0, n]$: removing first.
+        -   $t \in [n, 2n]$: adding to end?
+    -   Let's verify $t=2$ in Ex 2. `[2, 0]`. $t=2$, index 0. Value `2`. Matches `[2]`.
+    -   $t=3$. `[3, 2]`. $t=3$, index 2. Matches `-1` if array empty.
+    -   $t=5$. `[5, 0]`. Value `0`. Matches `[0, 1]` or `[0]`.
+    -   Hypothesis:
+        -   Phase 1 (0 to n): Array shrinks from front. `nums[t % 2n ... n]`.
+        -   Phase 2 (n to 2n): Array grows?
+            -   At $n$, empty.
+            -   At $n+1$, size 1? `[0]`.
+            -   At $n+2$, size 2? `[0, 1]`.
+            -   At $2n$, full. `[0, 1, 2]`.
+        -   This perfectly explains $t=5$ (for $n=3$, $5$ is $n+2$). Size 2 `[0, 1]`. Index 0 is 0.
+        -   So at time `t` (mod 2n):
+            -   If `t < n`: `nums[t ... n-1]`.
+            -   If `t >= n`: `nums[0 ... t-n-1]`.
+            -   Wait.
+            -   $t=n$: empty. `nums[n...n-1]` (empty).
+            -   $t=n+1$: `[0]`. `nums[0...0]`.
+            -   $t=2n-1$: `nums[0...n-2]`.
+            -   $t=2n$: `nums[0...n-1]` (Full). Same as 0.
+    -   So Algorithm:
+        -   `period = 2 * n`.
+        -   `t %= period`.
+        -   If `t < n`: Array is `nums[t ... n-1]`.
+            -   Valid indices `0` to `n-1-t-1` (size `n-t`).
+            -   Value at `k`: `nums[t + k]`.
+        -   Else (`t >= n`): Array is `nums[0 ... t-n-1]`?
+            -   Wait. Size is `t - n`.
+            -   If $t=n$, size 0.
+            -   If $t=n+1$, size 1 `[0]`.
+            -   Valid indices `0` to `t-n-1`.
+            -   Value at `k`: `nums[k]`.
+        -   Wait. $t=5$ ($n=3$). Size $5 - 3 = 2$. Indices $0, 1$. `nums[0], nums[1]`. `0, 1`.
+        -   Result `0` is valid.
+    -   So the logic is:
+        -   $0 \dots n$: Removing.
+        -   $n \dots 2n$: Adding.
+        -   How? Probably "Replace it with removed" isn't instantaneous but "Refills from removed".
+    -   Solution:
+        -   $T = t % (2n)$.
+        -   If $T < n$: `res = nums[T + index]` (if `T + index < n`).
+        -   Else: `res = nums[index]` (if `index < T - n`).
+
+## Implementation Details
+-   Loop queries.
+-   Apply modulo logic.
