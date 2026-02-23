@@ -154,3 +154,39 @@ State 3: After Left Rotation on x / Trạng thái 3: Sau khi xoay trái tại x
      / \
     x   y
 ```
+
+---
+
+## 5. Deletion Cases in AVL Tree
+## 5. Các Trường Hợp Xóa Nút trong Cây AVL
+
+When a node is deleted from an AVL tree, the height of its ancestor nodes may decrease, which can lead to a violation of the AVL property (Balance Factor becomes > 1 or < -1). We check the balance coming up from the deleted node to the root. If a node becomes unbalanced, there are exactly 4 possible cases based on the balance factor of the newly unbalanced node (`N`) and its child.
+Khi một nút bị xóa khỏi cây AVL, chiều cao của các nút tổ tiên của nó có thể giảm xuống, dẫn đến việc vi phạm tính chất của cây AVL (Hệ số cân bằng trở thành > 1 hoặc < -1). Chúng ta kiểm tra sự cân bằng ngược lên từ nút bị xóa tới gốc. Nếu một nút trở nên mất cân bằng, có chính xác 4 trường hợp có thể xảy ra phân loại dựa trên hệ số cân bằng của nút bị mất cân bằng (`N`) và nút con của nó.
+
+### 5.1 Left Left Case (LL) / Trường hợp Trái Trái
+**Condition / Điều kiện:** `balance(N) > 1` and `balance(N.left) >= 0`
+
+**Explanation / Giải thích:**
+The left subtree of `N` is taller than the right subtree by at least 2, and the left child of `N` is perfectly balanced (`balance = 0`) or left-heavy (`balance > 0`). This typically happens when a node is deleted from the right subtree of `N`, causing the left side to become relatively too heavy. We fix this with a **Right Rotation** on `N`.
+Cây con bên trái của `N` cao hơn cây con bên phải ít nhất là 2, và nút con trái của `N` hoàn toàn cân bằng (`hệ số cân bằng = 0`) hoặc lệch trái (`hệ số cân bằng > 0`). Điều này thường xảy ra khi một nút bị xóa khỏi cây con bên phải của `N`, làm cho phía bên trái trở nên quá nặng một cách tương đối. Chúng ta khắc phục bằng cách **Xoay Phải** tại `N`.
+
+### 5.2 Left Right Case (LR) / Trường hợp Trái Phải
+**Condition / Điều kiện:** `balance(N) > 1` and `balance(N.left) < 0`
+
+**Explanation / Giải thích:**
+The left subtree of `N` is taller than the right subtree by at least 2, but the left child of `N` is right-heavy (`balance < 0`). This means the extra height making `N` unbalanced comes from the right child of `N`'s left child. We first do a **Left Rotation** on `N.left`, turning it into a Left Left case, and then a **Right Rotation** on `N`.
+Cây con bên trái của `N` cao hơn cây con bên phải ít nhất là 2, nhưng nút con trái của `N` lại lệch phải (`hệ số cân bằng < 0`). Điều này có nghĩa là chiều cao dư thừa làm `N` mất cân bằng xuất phát từ nút con phải của nút con trái của `N`. Đầu tiên ta thực hiện **Xoay Trái** tại `N.left`, đưa nó về trường hợp Trái Trái, sau đó **Xoay Phải** tại `N`.
+
+### 5.3 Right Right Case (RR) / Trường hợp Phải Phải
+**Condition / Điều kiện:** `balance(N) < -1` and `balance(N.right) <= 0`
+
+**Explanation / Giải thích:**
+The right subtree of `N` is taller than the left subtree by at least 2, and the right child of `N` is balanced (`balance = 0`) or right-heavy (`balance < 0`). This happens when a node is deleted from the left subtree of `N`. We fix this with a **Left Rotation** on `N`.
+Cây con bên phải của `N` cao hơn cây con bên trái ít nhất là 2, và nút con phải của `N` đang cân bằng (`hệ số cân bằng = 0`) hoặc lệch phải (`hệ số cân bằng < 0`). Điều này xảy ra khi một nút bị xóa khỏi cây con bên trái của `N`. Chúng ta khắc phục bằng cách **Xoay Trái** tại `N`.
+
+### 5.4 Right Left Case (RL) / Trường hợp Phải Trái
+**Condition / Điều kiện:** `balance(N) < -1` and `balance(N.right) > 0`
+
+**Explanation / Giải thích:**
+The right subtree of `N` is taller than the left subtree by at least 2, but the right child of `N` is left-heavy (`balance > 0`). The extra height comes from the left child of `N`'s right child. To resolve this, we perform a **Right Rotation** on `N.right` to make it a Right Right case, followed by a **Left Rotation** on `N`.
+Cây con bên phải của `N` cao hơn cây con bên trái ít nhất là 2, nhưng nút con phải của `N` lệch trái (`hệ số cân bằng > 0`). Chiều cao dư thừa làm mất cân bằng xuất phát từ nút con trái của nút con phải của `N`. Để giải quyết, chúng ta thực hiện **Xoay Phải** tại `N.right` để biến nó thành trường hợp Phải Phải, tiếp theo là **Xoay Trái** tại `N`.

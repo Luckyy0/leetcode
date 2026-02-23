@@ -1,0 +1,33 @@
+# Result for Average of Levels in Binary Tree
+# *Kết quả cho bài toán Trung bình cộng các Mức trong Cây Nhị phân*
+
+## Description
+## *Mô tả*
+
+Given the `root` of a binary tree, return the average value of the nodes on each level in the form of an array. Answers within `10^-5` of the actual answer will be accepted.
+*Cho gốc `root` của một cây nhị phân, hãy trả về giá trị trung bình của các nút trên mỗi mức dưới dạng một mảng. Các câu trả lời trong phạm vi `10^-5` của câu trả lời thực tế sẽ được chấp nhận.*
+
+---
+
+## Example 1:
+## *Ví dụ 1:*
+
+**Input:** root = [3,9,20,null,null,15,7]
+**Output:** [3.00000,14.50000,11.00000]
+**Explanation:** The average value of nodes on level 0 is 3, on level 1 is 14.5, and on level 2 is 11.
+Hence return [3, 14.5, 11].
+
+## Example 2:
+## *Ví dụ 2:*
+
+**Input:** root = [3,9,20,15,7]
+**Output:** [3.00000,14.50000,11.00000]
+
+---
+
+## Constraints:
+## *Ràng buộc:*
+
+*   The number of nodes in the tree is in the range `[1, 10^4]`.
+*   `-2^31 <= Node.val <= 2^31 - 1`
+*   The sum of values can exceed the range of a 32-bit integer.
